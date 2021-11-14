@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tubers</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/mode-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ext-language_tools.min.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      async function main() {
+        let pyodide = await loadPyodide({
+          indexURL : "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/"
+        });
+        pyodide.runPythonAsync(`
+from io import BytesIO
+from zipfile import ZipFile
+from js import fetch
+
+response = await fetch("./app.zip")
+buffer = await response.arrayBuffer()
+with ZipFile(BytesIO(buffer.to_py()), "r") as zip:
+    zip.extractall("/lib/python3.9/site-packages")
+
+from app import main
+await main()
+        `);
+      }
+      main();
+    </script>
+    <button type="button" id="connect" disabled>Connect</button>
+    <button type="button" id="play" disabled>Play</button>
+    <br><br>
+    <div id="editor">print("Hello World")
+command = bytearray([0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD1])
+await robot.bluetooth.write(command)</div>
+    <script>
+      var editor = ace.edit("editor");
+      editor.session.setMode("ace/mode/python");
+      editor.setOptions({
+        minLines:10,
+        maxLines:40,
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+      });
+    </script>
+  </body>
+  <footer>
+    <pre>&copy; 2021 Michael Mogenson</pre>
+  </footer>
+</html>
