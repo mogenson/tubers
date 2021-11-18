@@ -10,3 +10,7 @@ build: clean
 
 clean:
 	rm -rf public/
+
+lint:
+	black app/
+	isort app/
