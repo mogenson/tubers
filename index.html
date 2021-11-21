@@ -29,12 +29,13 @@ await main()
       }
       main();
     </script>
+    <h1>Python web app for educational robots</h1>
     <button type="button" id="connect" disabled>Connect</button>
-    <button type="button" id="play" disabled>Play</button>
-    <br><br>
-    <div id="editor">print("Hello World")
-await robot.bluetooth.write(command)</div>
-print("drive done")
+    <button type="button" id="play">Play</button>
+    <br><br><label for="editor">Code:</label>
+    <div id="editor" style="width:660px;">print("Hello World")</div>
+    <br><label for="output">Output:</label><br>
+    <textarea id="output" rows="4" cols="80" readonly></textarea>
     <script>
       var editor = ace.edit("editor");
       editor.session.setMode("ace/mode/python");

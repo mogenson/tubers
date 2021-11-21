@@ -1,4 +1,6 @@
 from asyncio import get_running_loop
+from contextlib import redirect_stdout
+from io import StringIO
 
 import js
 
@@ -13,6 +15,7 @@ class App:
         self.bluetooth = Bluetooth()
         self.disconnected_callback = self.disconnected
         self.robot = Robot(self.bluetooth)
+        self.text_area = js.document.getElementById("output")
         self.play_button = js.document.getElementById("play")
         self.play_button.onclick = lambda event: self.loop.create_task(self.play())
         self.connect_button = js.document.getElementById("connect")
@@ -47,7 +50,9 @@ class App:
             f"async def user_program(robot): "
             + "".join(f"\n {line}" for line in code.split("\n"))
         )
-        await locals()["user_program"](self.robot)
+        with redirect_stdout(StringIO()) as output:
+            await locals()["user_program"](self.robot)
+        self.text_area.innerHTML = output.getvalue()
 
 
 async def main():
