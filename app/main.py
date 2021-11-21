@@ -23,6 +23,7 @@ class App:
             self.connect()
         )
         self.connect_button.disabled = False
+        self.user_program = None
 
     def disconnected(self):
         self.connect_button.innerHTML = "Connect"
@@ -50,8 +51,12 @@ class App:
             f"async def user_program(robot): "
             + "".join(f"\n {line}" for line in code.split("\n"))
         )
+        self.user_program = locals()["user_program"]
         with redirect_stdout(StringIO()) as output:
-            await locals()["user_program"](self.robot)
+            try:
+                await self.user_program(self.robot)
+            except Exception as error:
+                print(f"Error: {error}")
         self.text_area.innerHTML = output.getvalue()
 
 
