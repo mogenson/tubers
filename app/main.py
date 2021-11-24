@@ -1,11 +1,20 @@
 from asyncio import get_running_loop
 from contextlib import redirect_stdout
-from io import StringIO
+from io import TextIOBase
 
 import js
 
 from .bluetooth import Bluetooth
 from .robot import Robot
+
+
+class HTMLElementIO(TextIOBase):
+    def __init__(self, element):
+        self.element = element
+        self.element.innerHTML = ""
+
+    def write(self, string):
+        self.element.innerHTML += string
 
 
 class App:
@@ -17,7 +26,7 @@ class App:
         self.robot = Robot(self.bluetooth)
         self.text_area = js.document.getElementById("output")
         self.play_button = js.document.getElementById("play")
-        self.play_button.onclick = lambda event: self.loop.create_task(self.play())
+        self.play_button.onclick = lambda event: self.play()
         self.connect_button = js.document.getElementById("connect")
         self.connect_button.onclick = lambda event: self.loop.create_task(
             self.connect()
@@ -45,19 +54,27 @@ class App:
             self.connect_button.disabled = True
             self.bluetooth.disconnect()
 
-    async def play(self):
+    def play(self):
+        if not self.robot.is_running():
+            self.play_button.innerHTML = "Stop"
+            self.robot.run()
+            self.user_program = self.loop.create_task(self.run_user_program())
+        else:
+            self.user_program.cancel()
+            self.robot.stop()
+            self.play_button.innerHTML = "Play"
+
+    async def run_user_program(self):
         code = self.editor.getValue()
         exec(
             f"async def user_program(robot): "
             + "".join(f"\n {line}" for line in code.split("\n"))
         )
-        self.user_program = locals()["user_program"]
-        with redirect_stdout(StringIO()) as output:
+        with redirect_stdout(HTMLElementIO(self.text_area)):
             try:
-                await self.user_program(self.robot)
+                await locals()["user_program"](self.robot)
             except Exception as error:
                 print(f"Error: {error}")
-        self.text_area.innerHTML = output.getvalue()
 
 
 async def main():

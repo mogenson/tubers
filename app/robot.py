@@ -12,6 +12,7 @@ class Robot:
         self.loop = get_running_loop()
         self.pending = {}
         self._inc = 0
+        self._running = False
 
     @property
     def inc(self):
@@ -26,19 +27,30 @@ class Robot:
     def bound(value, low, high):
         return min(high, max(low, value))
 
+    def run(self):
+        self._running = True
+
+    def is_running(self):
+        return self._running
+
+    def stop(self):
+        self._running = False
+
     def _data_received(self, data):
-        packet = Packet.from_bytes(data)
-        print(f"RX: {packet}")
-        if packet.check_crc():
-            key = (packet.dev, packet.cmd, packet.inc)
-            if key in self.pending.keys():
-                future = self.pending.pop(key)
-                future.set_result(packet)
+        if self._running:
+            packet = Packet.from_bytes(data)
+            print(f"RX: {packet}")
+            if packet.check_crc():
+                key = (packet.dev, packet.cmd, packet.inc)
+                if key in self.pending.keys():
+                    future = self.pending.pop(key)
+                    future.set_result(packet)
 
     async def write_packet(self, packet):
         """Send a packet"""
-        await self.bluetooth.write(packet.to_bytes())
-        print(f"TX: {packet}")
+        if self._running:
+            await self.bluetooth.write(packet.to_bytes())
+            print(f"TX: {packet}")
 
     async def drive_distance(self, distance):
         """Drive distance in centimeters"""
