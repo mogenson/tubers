@@ -1,20 +1,10 @@
 from asyncio import get_running_loop
-from contextlib import redirect_stdout
-from io import TextIOBase
 
 import js
 
 from .bluetooth import Bluetooth
+from .output import redirect_output
 from .robot import Robot
-
-
-class HTMLElementIO(TextIOBase):
-    def __init__(self, element):
-        self.element = element
-        self.element.innerHTML = ""
-
-    def write(self, string):
-        self.element.innerHTML += string
 
 
 class App:
@@ -22,9 +12,9 @@ class App:
         self.editor = js.editor
         self.loop = get_running_loop()
         self.bluetooth = Bluetooth()
-        self.disconnected_callback = self.disconnected
+        self.bluetooth.disconnected_callback = self.disconnected
         self.robot = Robot(self.bluetooth)
-        self.text_area = js.document.getElementById("output")
+        self.output = js.document.getElementById("output")
         self.play_button = js.document.getElementById("play")
         self.play_button.onclick = lambda event: self.play()
         self.connect_button = js.document.getElementById("connect")
@@ -57,6 +47,7 @@ class App:
     def play(self):
         if not self.robot.is_running():
             self.play_button.innerHTML = "Stop"
+            self.output.innerHTML = ""
             self.robot.run()
             self.user_program = self.loop.create_task(self.run_user_program())
         else:
@@ -70,7 +61,7 @@ class App:
             f"async def user_program(robot): "
             + "".join(f"\n {line}" for line in code.split("\n"))
         )
-        with redirect_stdout(HTMLElementIO(self.text_area)):
+        with redirect_output():
             try:
                 await locals()["user_program"](self.robot)
             except Exception as error:
