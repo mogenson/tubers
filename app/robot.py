@@ -1,4 +1,5 @@
-from asyncio import Future, get_running_loop
+from asyncio import Future, get_running_loop, wait_for
+from collections import defaultdict
 from contextlib import redirect_stdout
 from struct import pack, unpack
 
@@ -8,12 +9,14 @@ from .packet import Packet
 
 
 class Robot:
+    DEFAULT_TIMEOUT = 3
+
     def __init__(self, bluetooth):
         self._bluetooth = bluetooth
         self._bluetooth.data_received_callback = self._data_received
         self._loop = get_running_loop()
         self._responses = {}
-        self._events = {}
+        self._events = defaultdict(list)
         self._inc = 0
         self._running = False
         self.debug = False
@@ -34,7 +37,7 @@ class Robot:
 
     def run(self):
         self._responses = {}
-        self._events = {}
+        self._events = defaultdict(list)
         self._running = True
 
     def is_running(self):
@@ -43,10 +46,10 @@ class Robot:
     def stop(self):
         self._running = False
 
-    async def _run_callback(self, callback):
+    async def _run_callback(self, callback, args):
         with redirect_output():
             try:
-                await callback()
+                await callback(args)
             except Exception as error:
                 print(f"Error: {error}")
 
@@ -70,10 +73,10 @@ class Robot:
 
         key = (packet.dev, packet.cmd)
         if key in self._events.keys():
-            self._loop.create_task(self._run_callback(self._events[key]))
-            # for (filter, callback) in self._events[key]:
-            #     if filter(packet):
-            #         self._loop.create_task(callback(packet))
+            for (filter, callback) in self._events[key]:
+                args = filter(packet)
+                if args:
+                    self._loop.create_task(self._run_callback(callback, args))
 
     async def write_packet(self, packet):
         """Send a packet"""
@@ -81,14 +84,23 @@ class Robot:
             await self._bluetooth.write(packet.to_bytes())
             print(f"TX: {packet}")
 
-    def on_bump(self, callback):
-        self._events[(12, 0)] = callback
+    def on_bump(self, filter=(True, True)):
+        def decorator(callback):
+            def filter_function(packet):
+                left = packet.payload[4] & 0x80 != 0
+                right = packet.payload[4] & 0x40 != 0
+                if left == filter[0] and right == filter[1]:
+                    return (left, right)
+
+            self._events[(12, 0)].append((filter_function, callback))
+
+        return decorator
 
     async def drive_distance(self, distance):
         """Drive distance in centimeters"""
         dev, cmd, inc = 1, 8, self.inc
         packet = Packet(dev, cmd, inc, pack(">i", int(distance * 10)))
-        future = self.loop.create_future()
+        future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(packet)
-        await future
+        await wait_for(future, self.DEFAULT_TIMEOUT + int(distance / 10))
