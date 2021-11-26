@@ -65,4 +65,3 @@ class Bluetooth:
     async def write(self, data):
         if self.is_connected():
             await self.tx_characteristic.writeValueWithResponse(pyodide.to_js(data))
-            print("tx done")

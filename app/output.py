@@ -1,4 +1,3 @@
-import contextlib
 import io
 
 import js
@@ -11,6 +10,5 @@ class OutputIO(io.TextIOBase):
     def write(self, string):
         self.output.innerHTML += string
 
-
-def redirect_output():
-    return contextlib.redirect_stdout(OutputIO())
+    def clear(self):
+        self.output.innerHTML = ""

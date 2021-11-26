@@ -4,7 +4,7 @@ from contextlib import redirect_stdout
 from struct import pack, unpack
 
 from .bluetooth import Bluetooth
-from .output import redirect_output
+from .debug import debug
 from .packet import Packet
 
 
@@ -19,7 +19,6 @@ class Robot:
         self._events = defaultdict(list)
         self._inc = 0
         self._running = False
-        self.debug = False
 
     @property
     def inc(self):
@@ -46,24 +45,15 @@ class Robot:
     def stop(self):
         self._running = False
 
-    async def _run_callback(self, callback, args):
-        with redirect_output():
-            try:
-                await callback(args)
-            except Exception as error:
-                print(f"Error: {error}")
-
     def _data_received(self, data):
         if not self._running:
             return
 
         packet = Packet.from_bytes(data)
-
-        if self.debug:
-            print(f"RX: {packet}")
+        debug(f"RX: {packet}")
 
         if not packet.check_crc():
-            print(f"CRC fail: {packet}")
+            debug(f"CRC fail: {packet}")
             return
 
         key = (packet.dev, packet.cmd, packet.inc)
@@ -76,20 +66,20 @@ class Robot:
             for (filter, callback) in self._events[key]:
                 args = filter(packet)
                 if args:
-                    self._loop.create_task(self._run_callback(callback, args))
+                    self._loop.create_task(callback(args))
 
     async def write_packet(self, packet):
         """Send a packet"""
         if self._running:
             await self._bluetooth.write(packet.to_bytes())
-            print(f"TX: {packet}")
+            debug(f"TX: {packet}")
 
-    def on_bump(self, filter=(True, True)):
+    def on_bump(self, filter=None):
         def decorator(callback):
             def filter_function(packet):
                 left = packet.payload[4] & 0x80 != 0
                 right = packet.payload[4] & 0x40 != 0
-                if left == filter[0] and right == filter[1]:
+                if not filter or filter == (left, right):
                     return (left, right)
 
             self._events[(12, 0)].append((filter_function, callback))
