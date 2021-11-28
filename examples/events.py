@@ -23,3 +23,8 @@ async def left_bumps(bumpers: Bumpers):
 @robot.on_color(Colors([Colors.ANY, Colors.BLACK, Colors.ANY]))
 async def black_in_center(colors: Colors):
     print(f"black in center: {colors}")
+
+
+@robot.on_light(Lights(state=Lights.LEFT_BRIGHTER))
+async def wink(lights: Lights):
+    print(f"wink: {lights}")

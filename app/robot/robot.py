@@ -5,7 +5,7 @@ from struct import pack, unpack
 from ..bluetooth import Bluetooth
 from ..debug import debug
 from .packet import Packet
-from .types import Bumpers, Colors
+from .types import Bumpers, Colors, Lights, note
 
 
 class Robot:
@@ -71,6 +71,22 @@ class Robot:
                 return bumpers if not filter or filter == bumpers else None
 
             self._events[(12, 0)].append((filter_function, callback))
+
+        return decorator
+
+    def on_light(self, filter: Lights = None):
+        """
+        Decorator for event handler of type: async callback(lights: Lights)
+        Use default None filter to pass every event. Set filter to an instance
+        of Lights() to only pass events that match Lights state.
+        """
+
+        def decorator(callback):
+            def filter_function(packet):
+                lights = Lights.from_packet(packet)
+                return lights if not filter or filter.state == lights.state else None
+
+            self._events[(13, 0)].append((filter_function, callback))
 
         return decorator
 
