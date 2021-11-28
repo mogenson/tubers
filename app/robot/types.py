@@ -5,17 +5,17 @@ from .packet import Packet
 
 
 @dataclass
-class Bumpers:
+class Bumper:
     left: bool
     right: bool
 
     @classmethod
     def from_packet(cls, packet: Packet):
-        return Bumpers(packet.payload[4] & 0x80 != 0, packet.payload[4] & 0x40 != 0)
+        return Bumper(packet.payload[4] & 0x80 != 0, packet.payload[4] & 0x40 != 0)
 
 
 @dataclass
-class Colors:
+class Color:
     WHITE = 0
     BLACK = 1
     RED = 2
@@ -31,11 +31,11 @@ class Colors:
 
     @classmethod
     def from_packet(cls, packet: Packet):
-        return Colors([c >> i & 0xF for c in packet.payload for i in range(4, -1, -4)])
+        return Color([c >> i & 0xF for c in packet.payload for i in range(4, -1, -4)])
 
 
 @dataclass
-class Lights:
+class Light:
     DARKER = 4
     RIGHT_BRIGHTER = 5
     LEFT_BRIGHTER = 6
@@ -47,7 +47,7 @@ class Lights:
 
     @classmethod
     def from_packet(cls, packet: Packet):
-        return Lights(
+        return Light(
             packet.payload[4],
             unpack(">H", packet.payload[5:7])[0],
             unpack(">H", packet.payload[7:9])[0],

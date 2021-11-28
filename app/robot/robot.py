@@ -5,7 +5,7 @@ from struct import pack, unpack
 from ..bluetooth import Bluetooth
 from ..debug import debug
 from .packet import Packet
-from .types import Bumpers, Colors, Lights, Touch, note
+from .types import Bumper, Color, Light, Touch, note
 
 
 class Robot:
@@ -27,64 +27,64 @@ class Robot:
         self._running = False
         self._enable_motors = True
 
-    def on_color(self, filter: Colors = None):
+    def on_color(self, filter: Color = None):
         """
-        Decorator for event handler of type: async callback(colors: Colors) Use
+        Decorator for event handler of type: async callback(color: Color) Use
         default None filter to pass every event. Set filter to an instance of
-        Colors() to only pass events that match filter. Use Colors.ANY for any
-        color. Colors.colors length can be from 1 to 32.
+        Color() to only pass events that match filter. Use Color.ANY for any
+        color. Color.colors length can be from 1 to 32.
         """
 
         def decorator(callback):
             def filter_function(packet):
-                colors = Colors.from_packet(packet)
+                color = Color.from_packet(packet)
                 if not filter:
-                    return colors
+                    return color
                 # get size of each zone
-                chunk = round(len(colors.colors) / len(filter.colors))
+                chunk = round(len(color.colors) / len(filter.colors))
                 # chop color list into zones
                 zones = [
-                    colors.colors[i : i + chunk]
-                    for i in range(0, len(colors.colors), chunk)
+                    color.colors[i : i + chunk]
+                    for i in range(0, len(color.colors), chunk)
                 ]
                 # check if filter color exists in each zone (or is ANY)
                 result = map(
-                    lambda x: x[0] == Colors.ANY or x[0] in x[1],
+                    lambda x: x[0] == Color.ANY or x[0] in x[1],
                     zip(filter.colors, zones),
                 )
-                return colors if all(result) else None
+                return color if all(result) else None
 
             self._events[(4, 2)].append((filter_function, callback))
 
         return decorator
 
-    def on_bump(self, filter: Bumpers = None):
+    def on_bump(self, filter: Bumper = None):
         """
-        Decorator for event handler of type: async callback(bumpers: Bumpers)
+        Decorator for event handler of type: async callback(bumper: Bumper)
         Use default None filter to pass every event. Set filter to an instance
-        of Bumpers() to only pass events that match filter.
+        of Bumper() to only pass events that match filter.
         """
 
         def decorator(callback):
             def filter_function(packet):
-                bumpers = Bumpers.from_packet(packet)
-                return bumpers if not filter or filter == bumpers else None
+                bumper = Bumper.from_packet(packet)
+                return bumper if not filter or filter == bumper else None
 
             self._events[(12, 0)].append((filter_function, callback))
 
         return decorator
 
-    def on_light(self, filter: Lights = None):
+    def on_light(self, filter: Light = None):
         """
-        Decorator for event handler of type: async callback(lights: Lights)
+        Decorator for event handler of type: async callback(light: Light)
         Use default None filter to pass every event. Set filter to an instance
-        of Lights() to only pass events that match Lights state.
+        of Light() to only pass events that match Light state.
         """
 
         def decorator(callback):
             def filter_function(packet):
-                lights = Lights.from_packet(packet)
-                return lights if not filter or filter.state == lights.state else None
+                light = Light.from_packet(packet)
+                return light if not filter or filter.state == light.state else None
 
             self._events[(13, 0)].append((filter_function, callback))
 

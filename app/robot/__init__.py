@@ -1,3 +1,3 @@
 from .packet import Packet
 from .robot import Robot
-from .types import Bumpers, Colors, Lights, Touch, note
+from .types import Bumper, Color, Light, Touch, note
