@@ -54,6 +54,23 @@ class Lights:
         )
 
 
+@dataclass
+class Touch:
+    front_left: bool
+    front_right: bool
+    back_right: bool
+    back_left: bool
+
+    @classmethod
+    def from_packet(cls, packet: Packet):
+        return Touch(
+            packet.payload[4] & 0x80 != 0,
+            packet.payload[4] & 0x40 != 0,
+            packet.payload[4] & 0x20 != 0,
+            packet.payload[4] & 0x10 != 0,
+        )
+
+
 def note(note: str, A4=440) -> float:
     """Convert a note name into frequency in hertz: eg. 'C#5'"""
     notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]

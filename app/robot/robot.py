@@ -5,7 +5,7 @@ from struct import pack, unpack
 from ..bluetooth import Bluetooth
 from ..debug import debug
 from .packet import Packet
-from .types import Bumpers, Colors, Lights, note
+from .types import Bumpers, Colors, Lights, Touch, note
 
 
 class Robot:
@@ -87,6 +87,22 @@ class Robot:
                 return lights if not filter or filter.state == lights.state else None
 
             self._events[(13, 0)].append((filter_function, callback))
+
+        return decorator
+
+    def on_touch(self, filter: Touch = None):
+        """
+        Decorator for event handler of type: async callback(touch: Touch)
+        Use default None filter to pass every event. Set filter to an instance
+        of Touch() to only pass events that match filter.
+        """
+
+        def decorator(callback):
+            def filter_function(packet):
+                touch = Touch.from_packet(packet)
+                return touch if not filter or filter == touch else None
+
+            self._events[(17, 0)].append((filter_function, callback))
 
         return decorator
 

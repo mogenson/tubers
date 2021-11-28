@@ -28,3 +28,10 @@ async def black_in_center(colors: Colors):
 @robot.on_light(Lights(state=Lights.LEFT_BRIGHTER))
 async def wink(lights: Lights):
     print(f"wink: {lights}")
+
+
+@robot.on_touch(
+    Touch(front_left=True, front_right=False, back_right=False, back_left=False)
+)
+async def touched(touch: Touch):
+    print(f"touched: {touch}")
