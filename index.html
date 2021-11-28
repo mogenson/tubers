@@ -34,11 +34,14 @@ await main()
     <button type="button" id="connect" disabled>Connect</button>
     <button type="button" id="play" >Play</button>
     <br><br><label for="editor">Code:</label>
-    <div id="editor" style="width:621px;">print("Hello World")
-@robot.on_bump(filter=(True, True))
-async def both(bumpers):
-    print(f"bumpers: {bumpers}")
-</div>
+    <div id="editor" style="width:621px;"># Press Connect to connect to robot over Bluetooth
+# Press Play to run this Python code and Stop to stop
+
+# Use robot object to control Bluetooth robot
+help(robot)  # any output will be printed below
+
+# Don't forget to await any async methods
+await robot.drive_distance(10)</div>
     <br><label for="output">Output:</label><br>
     <textarea id="output" rows="4" cols="70" readonly></textarea>
     <script>

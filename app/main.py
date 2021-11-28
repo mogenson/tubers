@@ -6,7 +6,7 @@ import js
 from .bluetooth import Bluetooth
 from .debug import debug
 from .output import OutputIO
-from .robot import Robot
+from .robot import *
 
 
 class App:
@@ -19,7 +19,7 @@ class App:
         self.bluetooth.disconnected_callback = self.disconnected
         self.robot = Robot(self.bluetooth)
         self.play_button = js.document.getElementById("play")
-        self.play_button.onclick = lambda event: self.play()
+        self.play_button.onclick = lambda event: self.loop.create_task(self.play())
         self.connect_button = js.document.getElementById("connect")
         self.connect_button.onclick = lambda event: self.loop.create_task(
             self.connect()
@@ -47,11 +47,11 @@ class App:
             self.connect_button.disabled = True
             self.bluetooth.disconnect()
 
-    def play(self):
+    async def play(self):
         if not self.robot.is_running():
             self.play_button.innerHTML = "Stop"
             self.output.clear()
-            self.robot.run()
+            await self.robot.run()
             code = self.editor.getValue()
             exec(
                 f"async def _user_program(robot): "
@@ -62,7 +62,7 @@ class App:
             )
         else:
             self.user_program.cancel()
-            self.robot.stop()
+            await self.robot.stop()
             self.play_button.innerHTML = "Play"
 
 

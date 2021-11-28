@@ -1,6 +1,6 @@
 import js
 
-DEBUG = True
+DEBUG = False
 
 
 def debug(string):
