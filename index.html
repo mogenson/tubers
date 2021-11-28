@@ -43,7 +43,8 @@ await main()
 help(robot)  # any output will be printed below
 
 # Don't forget to await any async methods
-await robot.drive_distance(10)</div>
+name = await robot.get_name()
+print(f"hello {name}")</div>
     <br><label for="output">Output:</label><br>
     <textarea id="output" rows="4" cols="70" style="font-family:monospace" readonly></textarea>
     <br><label>Examples:</label>

@@ -5,7 +5,19 @@ from struct import pack, unpack
 from ..bluetooth import Bluetooth
 from ..debug import debug
 from .packet import Packet
-from .types import Bumper, Color, Light, Touch, note
+from .types import (
+    Animation,
+    Bumper,
+    Color,
+    ColorFormat,
+    ColorLighting,
+    ColorSensors,
+    Light,
+    Marker,
+    ModulationType,
+    Touch,
+    note,
+)
 
 
 class Robot:
@@ -106,6 +118,52 @@ class Robot:
 
         return decorator
 
+    async def get_versions(self, board: int) -> list[int]:
+        """Get version numbers. Returns [board, fw maj, fw min, hw maj, hw min,
+        boot maj, boot min, proto maj, proto min]"""
+        dev, cmd, inc = 0, 0, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc, bytes([board])))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return packet.payload[:9] if packet else []
+
+    async def set_name(self, name: str):
+        """Set robot name"""
+        utf = name.encode("utf-8")
+        while len(utf) > Packet.PAYLOAD_LEN:
+            name = name[:-1]
+            utf = name.encode("utf-8")
+        await self.write_packet(Packet(0, 1, self.inc, utf))
+
+    async def get_name(self) -> str:
+        """Get robot name"""
+        dev, cmd, inc = 0, 2, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return packet.payload.decode("utf-8").rstrip("\0") if packet else ""
+
+    async def set_speeds(self, left: float, right: float):
+        """Set motor speed in cm/s"""
+        if self._enable_motors:
+            left = self.bound(int(left * 10), -100, 100)
+            right = self.bound(int(right * 10), -100, 100)
+            await self.write_packet(Packet(1, 4, self.inc, pack(">ii", left, right)))
+
+    async def set_left_speed(self, speed: float):
+        """Set left motor speed in cm/s"""
+        if self._enable_motors:
+            speed = self.bound(int(speed * 10), -100, 100)
+            await self.write_packet(Packet(1, 6, self.inc, pack(">i", speed)))
+
+    async def set_right_speed(self, speed: float):
+        """Set right motor speed in cm/s"""
+        if self._enable_motors:
+            speed = self.bound(int(speed * 10), -100, 100)
+            await self.write_packet(Packet(1, 7, self.inc, pack(">i", speed)))
+
     async def drive_distance(self, distance: float):
         """Drive distance in centimeters"""
         if self._enable_motors:
@@ -115,6 +173,203 @@ class Robot:
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(packet)
         await wait_for(future, self.DEFAULT_TIMEOUT + int(distance / 10))
+
+    async def turn_right(self, angle: float):
+        """Rotate clockwise in degrees"""
+        if self._enable_motors:
+            dev, cmd, inc = 1, 12, self.inc
+            packet = Packet(dev, cmd, inc, pack(">i", int(angle * 10)))
+            future = self._loop.create_future()
+            self._responses[(dev, cmd, inc)] = future
+            await self.write_packet(packet)
+            await wait_for(future, (self.DEFAULT_TIMEOUT + int(angle / 100)))
+
+    async def turn_left(self, angle: float):
+        """Rotate counter-clockwise in degrees"""
+        await self.turn_right(-angle)
+
+    async def reset_position(self):
+        """Reset robot's position estimate to zero"""
+        await self.write_packet(Packet(1, 15, self.inc))
+
+    async def get_position(self) -> tuple[float, float, float]:
+        """Get robot's position estimate. Returns (x, y, heading) in cm and
+        degrees"""
+        dev, cmd, inc = 1, 16, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return (
+            tuple([p / 10 for p in unpack(">3h", packet.payload[4:10])])
+            if packet
+            else (0, 0, 0)
+        )
+
+    async def navigate_position(self, x: float, y: float, heading: float = -1):
+        """Navigate to position (x, y) in centimeters with optional final
+        heading in 0 to 359 degrees"""
+        # NOT IMPLEMENTED IN FIRMWARE
+        pass
+
+    async def arc(self, angle: float, radius: float):
+        """Drive arc defined by angle in degrees and radius in cm"""
+        if self._enable_motors:
+            dev, cmd, inc = 1, 27, self.inc
+            payload = pack(">ii", int(angle * 10), int(radius * 10))
+            future = self._loop.create_future()
+            self._responses[(dev, cmd, inc)] = future
+            await self.write_packet(Packet(dev, cmd, inc, payload))
+            await wait_for(future, self.DEFAULT_TIMEOUT + int(radius * angle / 573))
+
+    async def set_marker(self, position: int):
+        """Set marker to position of type Marker"""
+        if self._enable_motors:
+            dev, cmd, inc = 2, 0, self.inc
+            payload = bytes([self.bound(position, Marker.UP, Marker.ERASE)])
+            future = self._loop.create_future()
+            self._responses[(dev, cmd, inc)] = future
+            await self.write_packet(Packet(dev, cmd, inc, payload))
+            await wait_for(future, self.DEFAULT_TIMEOUT)
+
+    async def set_lights(
+        self, red: int, green: int, blue: int, animation: int = Animation.ON
+    ):
+        """Set LED cross to animation of type Animation with color red, green,
+        blue"""
+        animation = self.bound(animation, Animation.OFF, Animation.SPIN)
+        red = self.bound(red, 0, 255)
+        green = self.bound(green, 0, 255)
+        blue = self.bound(blue, 0, 255)
+        payload = bytes([animation, red, green, blue])
+        await self.write_packet(Packet(3, 2, self.inc, payload))
+
+    async def get_color_sensor_data(
+        self, bank: int, lighting: int, format: int
+    ) -> list[int]:
+        """Get color data for bank of type ColorSensors, lighting of type
+        ColorLighting, and format of type ColorFormat. Returns list of 8
+        values"""
+        bank = self.bound(
+            bank, ColorSensors.SENSORS_0_TO_7, ColorSensors.SENSORS_24_TO_31
+        )
+        lighting = self.bound(lighting, ColorLighting.OFF, ColorLighting.ALL)
+        format = self.bound(format, ColorFormat.ADC_COUNTS, ColorFormat.MILLIVOLTS)
+        dev, cmd, inc = 4, 1, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc, bytes([bank, lighting, format])))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return list(unpack(">8H", packet.payload)) if packet else []
+
+    async def play_note(self, frequency: float, duration: float):
+        """Play note with frequency in hertz for duration in seconds"""
+        dev, cmd, inc = 5, 0, self.inc
+        payload = pack(">IH", abs(int(frequency)), abs(int(duration * 1000)))
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc, payload))
+        await wait_for(future, self.DEFAULT_TIMEOUT + int(duration))
+
+    async def stop_playing_note(self):
+        """Stop currently playing note"""
+        await self.write_packet(Packet(5, 1, self.inc))
+
+    async def say(self, phrase: str):
+        """Say a phrase in robot language"""
+        buf = phrase.encode("utf-8")
+        for payload in [
+            buf[i : i + Packet.PAYLOAD_LEN]
+            for i in range(0, len(buf), Packet.PAYLOAD_LEN)
+        ]:
+            dev, cmd, inc = 5, 4, self.inc
+            future = self._loop.create_future()
+            self._responses[(dev, cmd, inc)] = future
+            await self.write_packet(Packet(dev, cmd, inc, payload))
+            await wait_for(future, self.DEFAULT_TIMEOUT + len(payload))
+
+    async def play_sweep(
+        self,
+        start_frequency: float,
+        end_frequency: float,
+        duration: float,
+        attack: float = 0,
+        release: float = 0,
+        volume: float = 1.0,
+        modulation_type: int = ModulationType.DISABLED,
+        modulation_rate: int = 0,
+        append: bool = False,
+    ):
+        """Play sweep with start and end frequency in hertz, duration in
+        seconds, attack and release envelope in seconds, volume from 0 to 1.0,
+        modulation type of ModulationType, and modulation rate in hertz. Set
+        append to play this sweep after current sweep has finished."""
+        dev, cmd, inc = 5, 5, self.inc
+        start_frequency = abs(int(start_frequency * 1000))
+        end_frequency = abs(int(end_frequency * 1000))
+        duration = abs(int(duration * 1000))
+        attack = self.bound(int(attack * 1000), 0, 255)
+        release = self.bound(int(release * 1000), 0, 255)
+        volume = self.bound(int(volume * 255), 0, 255)
+        modulation_type = self.bound(
+            modulation_type, ModulationType.DISABLED, ModulationType.FREQUENCY
+        )
+        modulation_rate = self.bound(modulation_rate, 0, 255)
+        payload = pack(
+            ">IIH6B",
+            start_frequency,
+            end_frequency,
+            duration,
+            attack,
+            release,
+            volume,
+            modulation_type,
+            modulation_rate,
+            append,
+        )
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc, payload))
+        await wait_for(future, self.DEFAULT_TIMEOUT + duration // 1000)
+
+    async def stop_saying(self):
+        """Stop current phrase"""
+        await self.stop_playing_note()
+
+    async def get_light_sensor_data(self) -> tuple[int, int]:
+        """Get light sensor data. Returns (left_mV, right_mV)"""
+        dev, cmd, inc = 13, 1, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return unpack(">2H", packet.payload[4:8]) if packet else (0, 0)
+
+    async def get_battery_level(self) -> tuple[int, int]:
+        """Get battery level. Returns (mV, percent)"""
+        dev, cmd, inc = 14, 1, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc))
+        packet = await wait_for(self.DEFAULT_TIMEOUT)
+        return (
+            (unpack(">H", packet.payload[4:6])[0], packet.payload[6])
+            if packet
+            else (0, 0)
+        )
+
+    async def get_accelerometer(self) -> tuple[float, float, float]:
+        """Get accelerometer data. Returns (x, y, z) in g"""
+        dev, cmd, inc = 16, 1, self.inc
+        future = self._loop.create_future()
+        self._responses[(dev, cmd, inc)] = future
+        await self.write_packet(Packet(dev, cmd, inc))
+        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        return (
+            tuple([a / 1000 for a in unpack(">3h", packet.payload[4:10])])
+            if packet
+            else (0, 0, 0)
+        )
 
     @property
     def inc(self):

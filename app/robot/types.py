@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from struct import unpack
 
 from .packet import Packet
@@ -78,3 +79,43 @@ def note(note: str, A4=440) -> float:
     step = notes.index(note[0:-1])
     step += ((octave - 1) * 12) + 1
     return A4 * 2 ** ((step - 46) / 12)
+
+
+class Marker(Enum):
+    UP = 0
+    DOWN = 1
+    ERASE = 2
+
+
+class Animation(Enum):
+    OFF = 0
+    ON = 1
+    BLINK = 2
+    SPIN = 3
+
+
+class ColorSensors(Enum):
+    SENSORS_0_TO_7 = 0
+    SENSORS_8_TO_15 = 1
+    SENSORS_16_TO_23 = 2
+    SENSORS_24_TO_31 = 3
+
+
+class ColorLighting(Enum):
+    OFF = 0
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+    ALL = 4
+
+
+class ColorFormat(Enum):
+    ADC_COUNTS = 0
+    MILLIVOLTS = 1
+
+
+class ModulationType(Enum):
+    DISABLED = 0
+    VOLUME = 1
+    PULSE_WIDTH = 2
+    FREQUENCY = 3
