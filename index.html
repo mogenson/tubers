@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Tubers</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/mode-python.min.js"></script>
@@ -33,13 +34,13 @@ await main()
     <button type="button" id="connect" disabled>Connect</button>
     <button type="button" id="play" >Play</button>
     <br><br><label for="editor">Code:</label>
-    <div id="editor" style="width:660px;">print("Hello World")
+    <div id="editor" style="width:621px;">print("Hello World")
 @robot.on_bump(filter=(True, True))
 async def both(bumpers):
     print(f"bumpers: {bumpers}")
 </div>
     <br><label for="output">Output:</label><br>
-    <textarea id="output" rows="4" cols="80" readonly></textarea>
+    <textarea id="output" rows="4" cols="70" readonly></textarea>
     <script>
       var editor = ace.edit("editor");
       editor.session.setMode("ace/mode/python");
