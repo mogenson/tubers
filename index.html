@@ -15,6 +15,7 @@
           indexURL : "https://cdn.jsdelivr.net/pyodide/v0.18.1/full/"
         });
         pyodide.runPythonAsync(`
+from sys import path
 from io import BytesIO
 from zipfile import ZipFile
 from js import fetch
@@ -22,11 +23,12 @@ from js import fetch
 response = await fetch("./app.zip")
 buffer = await response.arrayBuffer()
 with ZipFile(BytesIO(buffer.to_py()), "r") as zip:
-    zip.extractall("/lib/python3.9/site-packages")
+    zip.extractall(path[-1])
 
 from app import main
 await main()
         `);
+      await pyodide.loadPackage("micropip");
       }
       main();
     </script>
@@ -43,7 +45,11 @@ help(robot)  # any output will be printed below
 # Don't forget to await any async methods
 await robot.drive_distance(10)</div>
     <br><label for="output">Output:</label><br>
-    <textarea id="output" rows="4" cols="70" readonly></textarea>
+    <textarea id="output" rows="4" cols="70" style="font-family:monospace" readonly></textarea>
+    <br><label>Examples:</label>
+    <button type="button" id="events">Events</button>
+    <button type="button" id="plot">Plot</button>
+    <button type="button" id="import">Import</button>
     <script>
       var editor = ace.edit("editor");
       editor.session.setMode("ace/mode/python");

@@ -26,6 +26,7 @@ class App:
         )
         self.connect_button.disabled = False
         self.user_program = None
+        self.set_examples()
 
     def disconnected(self):
         self.connect_button.innerHTML = "Connect"
@@ -64,6 +65,16 @@ class App:
             self.user_program.cancel()
             await self.robot.stop()
             self.play_button.innerHTML = "Play"
+
+    def set_examples(self):
+        def _set_example(id):
+            with open(sys.path[-1] + "/examples/" + id + ".py") as example:
+                self.editor.setValue(example.read(), -1)
+
+        for id in ["events", "plot", "import"]:
+            js.document.getElementById(id).onclick = lambda event, id=id: _set_example(
+                id
+            )
 
 
 async def main():

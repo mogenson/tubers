@@ -127,7 +127,7 @@ class Robot:
         await self.write_packet(Packet(0, 3, self.inc))
         self._running = False
 
-    def enable_motors(enable: bool):
+    def enable_motors(self, enable: bool):
         """Block/allow motor commands"""
         self._enable_motors = enable
 
