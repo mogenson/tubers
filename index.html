@@ -28,7 +28,7 @@ with ZipFile(BytesIO(buffer.to_py()), "r") as zip:
 from app import main
 await main()
         `);
-      await pyodide.loadPackage("micropip");
+      await pyodide.loadPackage(["micropip", "matplotlib"]);
       }
       main();
     </script>
