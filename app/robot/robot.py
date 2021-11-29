@@ -1,4 +1,4 @@
-from asyncio import Future, get_running_loop, wait_for
+from asyncio import Future, get_running_loop
 from collections import defaultdict
 from struct import pack, unpack
 
@@ -26,8 +26,6 @@ class Robot:
     register event handlers. Use other methods to send commands to robot and
     wait for response. Don't forget to await async methods!
     """
-
-    DEFAULT_TIMEOUT = 3
 
     def __init__(self, bluetooth):
         self._bluetooth = bluetooth
@@ -125,7 +123,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc, bytes([board])))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return packet.payload[:9] if packet else []
 
     async def set_name(self, name: str):
@@ -142,7 +140,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return packet.payload.decode("utf-8").rstrip("\0") if packet else ""
 
     async def set_speeds(self, left: float, right: float):
@@ -172,7 +170,7 @@ class Robot:
             future = self._loop.create_future()
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(packet)
-        await wait_for(future, self.DEFAULT_TIMEOUT + int(distance / 10))
+            await future
 
     async def turn_right(self, angle: float):
         """Rotate clockwise in degrees"""
@@ -182,7 +180,7 @@ class Robot:
             future = self._loop.create_future()
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(packet)
-            await wait_for(future, (self.DEFAULT_TIMEOUT + int(angle / 100)))
+            await future
 
     async def turn_left(self, angle: float):
         """Rotate counter-clockwise in degrees"""
@@ -199,7 +197,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return (
             tuple([p / 10 for p in unpack(">3h", packet.payload[4:10])])
             if packet
@@ -220,7 +218,7 @@ class Robot:
             future = self._loop.create_future()
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(Packet(dev, cmd, inc, payload))
-            await wait_for(future, self.DEFAULT_TIMEOUT + int(radius * angle / 573))
+            await future
 
     async def set_marker(self, position: int):
         """Set marker to position of type Marker"""
@@ -230,7 +228,7 @@ class Robot:
             future = self._loop.create_future()
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(Packet(dev, cmd, inc, payload))
-            await wait_for(future, self.DEFAULT_TIMEOUT)
+            await future
 
     async def set_lights(
         self, red: int, green: int, blue: int, animation: int = Animation.ON
@@ -259,7 +257,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc, bytes([bank, lighting, format])))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return list(unpack(">8H", packet.payload)) if packet else []
 
     async def play_note(self, frequency: float, duration: float):
@@ -269,7 +267,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc, payload))
-        await wait_for(future, self.DEFAULT_TIMEOUT + int(duration))
+        await future
 
     async def stop_playing_note(self):
         """Stop currently playing note"""
@@ -286,7 +284,7 @@ class Robot:
             future = self._loop.create_future()
             self._responses[(dev, cmd, inc)] = future
             await self.write_packet(Packet(dev, cmd, inc, payload))
-            await wait_for(future, self.DEFAULT_TIMEOUT + len(payload))
+            await future
 
     async def play_sweep(
         self,
@@ -330,7 +328,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc, payload))
-        await wait_for(future, self.DEFAULT_TIMEOUT + duration // 1000)
+        await future
 
     async def stop_saying(self):
         """Stop current phrase"""
@@ -342,7 +340,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return unpack(">2H", packet.payload[4:8]) if packet else (0, 0)
 
     async def get_battery_level(self) -> tuple[int, int]:
@@ -351,7 +349,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc))
-        packet = await wait_for(self.DEFAULT_TIMEOUT)
+        packet = await future
         return (
             (unpack(">H", packet.payload[4:6])[0], packet.payload[6])
             if packet
@@ -364,7 +362,7 @@ class Robot:
         future = self._loop.create_future()
         self._responses[(dev, cmd, inc)] = future
         await self.write_packet(Packet(dev, cmd, inc))
-        packet = await wait_for(future, self.DEFAULT_TIMEOUT)
+        packet = await future
         return (
             tuple([a / 1000 for a in unpack(">3h", packet.payload[4:10])])
             if packet
