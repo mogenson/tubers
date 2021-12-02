@@ -25,6 +25,8 @@ class App:
             self.connect()
         )
         self.connect_button.disabled = False
+        self.open_button = js.document.getElementById("open")
+        self.open_button.onchange = lambda event: self.loop.create_task(self.open())
         self.user_program = None
         self.set_examples()
 
@@ -65,6 +67,13 @@ class App:
             self.user_program.cancel()
             await self.robot.stop()
             self.play_button.innerHTML = "Play"
+
+    async def open(self):
+        if self.open_button.value:
+            files = self.open_button.files
+            blob = next(iter(files))
+            text = await blob.text()
+            self.editor.setValue(text, -1)
 
     def set_examples(self):
         def _set_example(id):

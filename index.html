@@ -46,9 +46,12 @@ await main()
     <h1>Root Robot Python Web App</h1>
     <button type="button" id="connect" disabled>Connect</button>
     <button type="button" id="play" disabled>Play</button>
+    <input id="open" type="file" accept=".py" style="display:none;" />
+    <button type="button" onclick="document.getElementById('open').click();">Open</button>
     <br><br><label for="editor">Code:</label>
     <div id="editor" style="width:621px;"># Press Connect to connect to robot over Bluetooth
 # Press Play to run this Python code and Stop to stop
+# Press Open to upload a Python file
 
 # Use robot object to control Bluetooth robot
 help(robot)  # any output will be printed below
