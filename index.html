@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/mode-python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ext-language_tools.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/theme-nord_dark.min.js"></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L46GBTQP5K"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -53,7 +54,7 @@ help(robot)  # any output will be printed below
 name = await robot.get_name()
 print(f"hello {name}")</div>
     <br><label for="output">Output:</label><br>
-    <textarea id="output" rows="4" cols="70" style="font-family:monospace" readonly></textarea>
+    <textarea id="output" rows="4" cols="73" style="font-family:monospace" readonly></textarea>
     <br><label>Examples:</label>
     <button type="button" id="events">Events</button>
     <button type="button" id="plot">Plot</button>
@@ -67,6 +68,9 @@ print(f"hello {name}")</div>
         enableBasicAutocompletion: true,
         enableLiveAutocompletion: true,
       });
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches) {
+          editor.setTheme("ace/theme/nord_dark");
+      }
     </script>
   </body>
   <footer>
