@@ -1,7 +1,10 @@
 <!DOCTYPE html>
+<html lang="en">
 <html>
   <head>
-    <title>Tubers</title>
+    <meta charset="UTF-8">
+    <title>Root Robot Python Web App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.min.js"></script>
@@ -40,7 +43,7 @@ await main()
       }
       main();
     </script>
-    <h1>Python web app for educational robots</h1>
+    <h1>Root Robot Python Web App</h1>
     <button type="button" id="connect" disabled>Connect</button>
     <button type="button" id="play" disabled>Play</button>
     <br><br><label for="editor">Code:</label>
@@ -55,7 +58,7 @@ name = await robot.get_name()
 print(f"hello {name}")</div>
     <br><label for="output">Output:</label><br>
     <textarea id="output" rows="4" cols="73" style="font-family:monospace" readonly></textarea>
-    <br><label>Examples:</label>
+    <br><label>Examples:</label><br>
     <button type="button" id="events">Events</button>
     <button type="button" id="plot">Plot</button>
     <button type="button" id="import">Import</button>
@@ -74,6 +77,6 @@ print(f"hello {name}")</div>
     </script>
   </body>
   <footer>
-    <pre>&copy; 2021 Michael Mogenson</pre>
+    <pre>&copy; 2021 Michael Mogenson. "Root Robot" is a trademark of iRobot Corporation.</pre>
   </footer>
 </html>

@@ -1,6 +1,6 @@
-# Tubers
+# Root Robot Python Web App
 
-Python web app for educational robots. Built with [Pyodide](https://pyodide.org)
+Python web app for iRobot Root Robot. Built with [Pyodide](https://pyodide.org)
 and [Ace](https://ace.c9.io) editor.
 
 ## build
@@ -24,3 +24,7 @@ Navigate to `http://localhost:8000` in Chrome browser.
 ```
 $ make clean
 ```
+
+-------------------------------------------------------------------------------
+
+"Root Robot" is a trademark of iRobot Corporation.
