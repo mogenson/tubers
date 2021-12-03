@@ -12,3 +12,7 @@ class OutputIO(io.TextIOBase):
 
     def clear(self):
         self.output.innerHTML = ""
+
+    def notify(self, string):
+        self.clear()
+        self.write(string)

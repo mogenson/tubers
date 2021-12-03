@@ -2,6 +2,7 @@ import asyncio
 import sys
 
 import js
+import pyodide
 
 from .bluetooth import Bluetooth
 from .debug import debug
@@ -26,8 +27,15 @@ class App:
         )
         self.connect_button.disabled = False
         self.open_button = js.document.getElementById("open")
-        self.open_button.onchange = lambda event: self.loop.create_task(self.open())
+        self.open_button.onclick = lambda event: self.loop.create_task(self.open())
+        self.save_button = js.document.getElementById("save")
+        self.save_button.onclick = lambda event: self.loop.create_task(self.save())
         self.user_program = None
+        self.file_handle = None
+        self.file_options = {"types": [{"accept": {"text/python": [".py"]}}]}
+        self.file_options = pyodide.to_js(
+            self.file_options, dict_converter=js.Object.fromEntries
+        )
         self.set_examples()
 
     def disconnected(self):
@@ -35,6 +43,7 @@ class App:
         self.connect_button.disabled = False
         self.play_button.disabled = True
         debug("disconnected")
+        self.output.notify("Disconnected")
 
     async def connect(self):
         if not self.bluetooth.is_connected():
@@ -45,6 +54,7 @@ class App:
             self.connect_button.disabled = False
             self.play_button.disabled = False
             debug("connected")
+            self.output.notify("Connected")
         else:
             debug("disconnect")
             self.connect_button.disabled = True
@@ -69,11 +79,20 @@ class App:
             self.play_button.innerHTML = "Play"
 
     async def open(self):
-        if self.open_button.value:
-            files = self.open_button.files
-            blob = next(iter(files))
-            text = await blob.text()
-            self.editor.setValue(text, -1)
+        file_handles = await js.window.showOpenFilePicker(self.file_options)
+        self.file_handle = file_handles[0]
+        blob = await self.file_handle.getFile()
+        text = await blob.text()
+        self.editor.setValue(text, -1)
+        self.output.notify(f"Opened {self.file_handle.name}")
+
+    async def save(self):
+        if not self.file_handle:
+            self.file_handle = await js.window.showSaveFilePicker(self.file_options)
+        writable = await self.file_handle.createWritable()
+        await writable.write(self.editor.getValue())
+        await writable.close()
+        self.output.notify(f"Saved {self.file_handle.name}")
 
     def set_examples(self):
         def _set_example(id):
