@@ -6,6 +6,11 @@
     <title>Root Robot Python Web App</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <script type="text/javascript">
+      if (!window.navigator.bluetooth || !window.showOpenFilePicker || !window.showSaveFilePicker) {
+        window.alert("Your browser is not supported. Please use Chrome.");
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/mode-python.min.js"></script>
@@ -79,7 +84,7 @@ print(f"hello {name}")</div>
       }
     </script>
   </body>
-  <footer>
+  <footer style="width:621px">
     <pre>&copy; 2021 Michael Mogenson. "Root Robot" is a trademark of iRobot Corporation.</pre>
   </footer>
 </html>
